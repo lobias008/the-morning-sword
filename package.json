@@ -1,0 +1,29 @@
+{
+  "name": "the-morning-sword",
+  "version": "1.0.0",
+  "description": "Offensive multi-asset asymmetric yield generator for Bitget Playbook using GetClaw multi-timeframe confluence.",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "node index.js",
+    "check": "node --check index.js"
+  },
+  "keywords": [
+    "the-morning-sword",
+    "bitget",
+    "getagent",
+    "getclaw",
+    "trading-agent",
+    "multi-asset",
+    "confluence"
+  ],
+  "author": "lobias008",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "dependencies": {
+    "@bitget-ai/getagent-skill": "latest"
+  }
+}
