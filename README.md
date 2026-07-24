@@ -5,7 +5,8 @@ Where Agent 47 acts as the ultimate protective shield, The Morning Sword is the 
 **Track:** Track 1 - Trading Agent  
 **Venue:** Bitget Playbook  
 **SDK:** `@bitget-ai/getagent-skill`  
-**Symbols:** `BITGET:BTCUSDT`, `BITGET:XAUUSDT`, `BITGET:OILUSDT`, `BITGET:SPX500USDT`
+**Requested Symbols:** `BITGET:BTCUSDT`, `BITGET:XAUUSDT`, `BITGET:OILUSDT`, `BITGET:SPX500USDT`  
+**Confirmed Playbook Symbols:** `BTCUSDT`, `XAUUSDT`, `AXTIUSDT`, `SP500USDT`
 
 ## Executive Summary
 
@@ -13,14 +14,30 @@ The Morning Sword is an offensive, multi-asset asymmetric yield generator. It wa
 
 The system is designed around precision rather than trade frequency. Every position is sized from a fixed 1.0% equity risk budget against a 1.5x 4H ATR stop. A hard -2.0% daily equity loss circuit breaker cancels orders, flattens active exposure, and locks execution for 24 hours.
 
+## 策略 / Strategy
+
+The strategy scans confirmed Bitget contract symbols and emits signal-only Playbook decisions. It uses 1D EMA 20/50/200 alignment for higher-timeframe bias and only considers 4H pullbacks when participation and RSI confirm that the pullback is orderly rather than broken.
+
+## 开仓 / Entry
+
+Long entries require 1D EMA 20 > EMA 50 > EMA 200, a 4H pullback into the EMA 20/50 zone, three consecutive volume-spike candles, and RSI between 40 and 60. BTC additionally requires absolute funding below 0.05%; Gold is gated to London and New York sessions; Oil proxy exposure requires Parabolic SAR confirmation.
+
+## 平仓 / Exit
+
+The first exit harvests 50% of the position at 1:2 R:R. Immediately after that partial fill, the stop loss moves to entry and the remaining position becomes a Free Trade. The runner is trailed with Parabolic SAR toward 1:4+ R:R.
+
+## 风险 / Risk
+
+Each trade is sized from a strict 1.0% equity risk budget using a 1.5x ATR stop. If reported daily equity loss reaches -2.0%, the circuit breaker emits a portfolio hold signal, cancels new entries, and marks execution as locked for 24 hours.
+
 ## GetClaw Multi-Asset Rules Table
 
 | Asset | Symbol | Trend Bias | Entry Trigger | Asset Adaptation |
 | --- | --- | --- | --- | --- |
 | Bitcoin | `BITGET:BTCUSDT` | 1D EMA 20 > EMA 50 > EMA 200 | 4H EMA 20/50 pullback + volume spike + RSI 40-60 | 1.5x 4H ATR stop; funding filter requires `abs(rate) < 0.05%` |
 | Gold | `BITGET:XAUUSDT` | 1D EMA 20 > EMA 50 > EMA 200 | 4H EMA 20/50 pullback + volume spike + RSI 40-60 | Trade London and New York opens only; skip Asian session |
-| WTI Oil | `BITGET:OILUSDT` | 1D EMA 20 > EMA 50 > EMA 200 | 4H EMA 20/50 pullback + volume spike + RSI 40-60 | Require Parabolic SAR trend confirmation; pause around EIA inventory events |
-| S&P 500 | `BITGET:SPX500USDT` | 1D EMA 20 > EMA 50 > EMA 200 | 4H EMA 20/50 pullback + volume spike + RSI 40-60 | Require 1D EMA 50 bounce; block earnings and macro gap risk |
+| WTI Oil proxy | `BITGET:AXTIUSDT` | 1D EMA 20 > EMA 50 > EMA 200 | 4H EMA 20/50 pullback + volume spike + RSI 40-60 | Require Parabolic SAR trend confirmation; requested `OILUSDT` was not found in Bitget public contracts |
+| S&P 500 | `BITGET:SP500USDT` | 1D EMA 20 > EMA 50 > EMA 200 | 4H EMA 20/50 pullback + volume spike + RSI 40-60 | Require 1D EMA 50 bounce; requested `SPX500USDT` was not found in Bitget public contracts |
 
 ## Risk Management Matrix
 
@@ -41,19 +58,20 @@ Install dependencies:
 npm install
 ```
 
-Validate the deployment script:
+Validate the JavaScript wrapper:
 
 ```powershell
 npm run check
 ```
 
-Backtest and publish to the Bitget Playbook ecosystem:
+Validate the Playbook package:
 
 ```powershell
-npm run deploy
+$env:PYTHONIOENCODING='utf-8'
+python node_modules\@bitget-ai\getagent-skill\skills\getagent\scripts\validate.py .
 ```
 
-Direct execution:
+Run the JavaScript wrapper:
 
 ```powershell
 node index.js
@@ -61,6 +79,6 @@ node index.js
 
 ## Deployment Notes
 
-The deployment script imports `@bitget-ai/getagent-skill`, embeds the supplied Playbook API key, builds a full GetClaw strategy definition, and calls `getagent.createPlaybook` through compile, backtest, and publish phases.
+The Playbook package is defined by `manifest.yaml` and `src/main.py`. The JavaScript wrapper remains in the repository for the original hackathon deployment shape, but the installable GetAgent package itself is the Python Playbook package.
 
 Trading is risky. This project is a hackathon strategy implementation and should be reviewed with isolated credentials, exchange permissions, and conservative execution limits before live use.
